@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>google transition</title>
+  <style type="text/css">
+    * { padding: 0; margin: 0; }
+    body { padding: 50px 100px; }
+    div { border: solid 1px #185; }
+    .magnify { overflow: hidden; border-color: #ddd; }
+    .magnify img { position: relative; line-height: 400px; text-align: center; }
+    .slider { background: #ddd; opacity: 0.2; cursor: move; border-color: blueviolet; }
+  </style>
+</head>
+<body>
+
+  <div id="container">
+    <img src="http://img.lizi.com/lizi/store/55a61c98e4b074f5824b95ec/1d3d3615dec38.jpg!wh400" data-origin="http://img.lizi.com/lizi/store/55a61c98e4b074f5824b95ec/1d3d3615dec38.jpg">
+  </div>
+
+  <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+  <script type="text/javascript">
+    $.fn.extend({
+        magnifyPic: function(options) {
+            //创建一个div包含当前图片的大尺寸，位置右边界
+            var 
+                $that = $(this),
+                src = $that.data('origin'),
+                $img = $('<img></img>'),
+                $img_container = $('<div>d</div'),
+                $slider = $('<div class="slider"</div>');
+                position = $that.position();
+                $parent = $that.parent();
+
+            var
+                defaults = {
+                    width: 400,
+                    height: 400,
+                    args: 150,
+                    class: 'magnify'
+                },
+                // 历史位置
+                current = {
+                    page_x: 0,
+                    page_y: 0
+                },
+                settings = $.extend({}, defaults, options);
+
+            // 返回鼠标位置
+            var get_o = function(left, p) {
+                if(left > settings.args) {
+                    if(left >  p - settings.args) {
+                        left = p - settings.args;
+                    } else {
+                        left = left - settings.args / 2;
+                    }
+                } else {
+                    left = 0
+                }
+                return left;
+            };
+
+
+            $that.on('mouseenter', function(e) {
+                $parent.css({
+                    position: 'relative'
+                });
+
+                $img.attr('src', src);
+                
+                $img_container.append($img).appendTo($parent).css({
+                    position: 'absolute',
+                    top: 0,
+                    left: $that.width() + position.left,
+                    width: settings.width,
+                    height: settings.height
+                }).addClass(settings.class);
+
+                var left = e.pageX - $that.offset().left,
+                    top = e.pageY - $that.offset().top;
+
+                left = get_o(left, $that.width());
+                top = get_o(top, $that.height());
+                // 添加滑块
+                current = {
+                    offset_x: left,
+                    offset_y: top
+                };
+
+                $slider.appendTo($parent).css({
+                    position: 'absolute',
+                    left: left,
+                    top: top ,
+                    width: settings.args,
+                    height: settings.args
+                });
+            });
+            
+
+            var get_n = function(value, p) {
+                var result;
+                if(value < settings.args / 2) {
+                    return 0;
+                } else {
+                    if(value > p - settings.args / 2) {
+                        return p - settings.args;
+                    } else {
+                        return value - settings.args / 2;
+                    }
+                }
+            }
+
+            $slider.on('mousemove', function(e) {
+                // 当前位置
+                // 鼠标指针偏移距离
+                
+                var left = e.pageX - $that.offset().left,
+                    top = e.pageY - $that.offset().top,
+                    left = get_n(left, $that.width())
+                    top = get_n(top, $that.height());
+
+                $(this).css({
+                    left: left,
+                    top: top
+                });
+
+                $img.css({
+                    left: - $img.width() * (left - 15) / $that.width(),
+                    top: - $img.height() * (top  - 15) / $that.height()
+                });
+            }).on('mouseleave', function() {
+                $(this).detach();
+            });
+
+        }
+    });
+    $('img').magnifyPic();
+  </script>
+</body>
+</html>
