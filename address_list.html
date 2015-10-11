@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <style type="text/css">
+    html {
+      height: 100%;
+    }
+    body {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      position: relative;
+    }
+    .mask { 
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #ddd;
+    }
+    .last { 
+      line-height: 40px;
+    }
+    .list a {
+      display: block;
+      text-decoration: none;
+      background: #fff;
+      color: #333;
+      padding: 5px 12px; 
+      border-bottom: solid 1px #ccc;
+    }
+    .last1 {
+      background: #;
+    }
+  </style>
+</head>
+<body>
+
+<a href="javascript:" class="pop_out_mask">build it!</a>
+<script type="text/javascript" src="zepto.js"></script>
+<script type="text/javascript">
+  $(function() {
+    // content to show
+    var areaList = [
+      { id: '55555550', name: '北京0' },
+      { id: '55555551', name: '北京1' },
+      { id: '55555552', name: '北京2' },
+      { id: '55555553', name: '北京3' },
+      { id: '55555554', name: '北京4' },
+      { id: '55555555', name: '北京5' },
+      { id: '55555556', name: '北京6' },
+      { id: '55555557', name: '北京7' }
+    ];
+
+    // a container only one time
+    // 一旦点击链接保持它一直存在除非刷新或移除
+    var $mask = null;
+    var result = null;
+
+    function init() {
+      $mask = $('<div class="mask" data-level="0">' +
+        '<div class="last last1"></div>' +
+        '<div class="last last2"></div>' +
+        '<div class="list"></div></div>')
+                .appendTo('body');
+      renderData(areaList);
+      handleClick($mask);
+    }
+
+
+    function resetMask () {
+      $mask.find('div').html('');
+      $mask.data('level', 0);
+    }
+
+
+    function renderData (data) {
+      var content = '';
+      $.each(data, function(i, v) {
+        content += '<a href="javascript:" data-id="' + v.id + '">' + v.name + '</a>'
+      });
+      $mask.find('.list').html(content);
+    }
+
+
+    // $ele 为弹出的遮罩层
+    function handleClick($ele) {
+
+      // list 中的链接点击总是使level增加
+      $ele.on('click', 'a', function() {
+        var $cur = $(this);
+        var id = $cur.data('id');
+        var name = $cur.text().trim();
+
+        postData(id, 1, function(level) {
+          $mask.find('.last' + level).html(name);
+        });
+      }).on('click', '.last', function() {
+        var $cur = $(this);
+        if($cur.hasClass('last1')) {
+          resetMask();
+          renderData(areaList);
+        } else {
+          var id = $cur.siblings('.last').data('id');
+          postData(id, -1, function(level) {
+            $cur.html('');
+          });
+        }
+      });
+    }
+
+
+    function postData(id, op, cb) {
+      $.get('test.json', { id: id }, function(data) {
+        renderData(data.list);
+        if(cb) cb(setLevel(op));
+      });
+    }
+
+
+    function setLevel (change) {
+      var old = parseInt($mask.data('level'), 10);
+      var now = old + change;
+      $mask.data('level', now);
+      // 返回当前层次
+      return now;
+    }
+
+
+    $('.pop_out_mask').on('click', function() {
+      init();
+    });
+
+  });
+</script>
+</body>
+</html>
