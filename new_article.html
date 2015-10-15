@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <style>
+    textarea { display: block; width: 100%; resize: none; height: 75px; }
+    .icon-container { text-align: center; }
+    .container input.file { display: none; }
+     .hidden .icon-container { visibility: hidden; }
+  </style>
+</head>
+<body>
+  
+</body>
+<script src="jquery.js"></script>
+<script type="text/javascript">
+  function buildArea($parent) {
+      var content = '<div class="container">' +
+          '<div class="icon-container">' + 
+          '<span data-type="image" class="img">图片</span><span data-type="text">文字</span>'
+          '</div></div>';
+      var $result = $(content);
+      if (!$parent) {
+          $result.prepend($('<textarea></textarea>')).appendTo($('body'));
+          return;
+      }
+      $result.insertAfter($parent);
+      return $result;
+  }
+
+  var controls = {
+      text: {
+          html: '<textarea></textarea>',
+          action: function ($ele) {
+              $ele.focus();
+          } 
+      },
+      image: {
+          html: '<input type="file" class="file" name="image" />',
+          action: function ($ele) {
+              $ele.click();
+          }
+      }
+  };
+
+  // 图片click事件
+  function handleImageClick (argument) {
+      $('body').on('click', '.icon-container span', function(e) {
+          console.log(1); 
+          var $target = $(e.target);
+          var type = $target.data('type');
+          var $parent = $target.closest('.container');
+          
+
+          var $newControl = $(controls[type]['html']);
+          
+          $parent.addClass('hidden');
+          var $newContainer = buildArea($parent);
+          $newControl.prependTo($newContainer);
+          (controls[type]['action'])($newControl);
+      });
+  }
+
+  function handleImageChange ($container) {
+      $('<img src="index.jpg />').appendTo($container);
+  }
+
+  function handleTextFocus () {
+      $('body').on('focus', 'textarea', function(e) {
+          $('textarea').parent().addClass('hidden');
+          $(e.target).parent().removeClass('hidden');
+      });
+  }
+
+
+  buildArea();
+  handleImageClick();
+  handleTextFocus();
+</script>
+</html>
