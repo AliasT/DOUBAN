@@ -66,9 +66,13 @@
   }
 
   function handleTextFocus () {
-      $('body').on('focus', 'textarea', function(e) {
+      $('body').on('focus', 'textarea img', function(e) {
           $('textarea').parent().addClass('hidden');
           $(e.target).parent().removeClass('hidden');
+      });
+      $('body').on('change', 'input.file', function () {
+          // post image to server
+          $('<<img src="index.jpg" alt="" />').prependTo($(this).closest('.container'));
       });
   }
 
