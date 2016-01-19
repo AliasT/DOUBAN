@@ -1,8 +1,5 @@
-/*  
- *  搜索结果展示页
- */
-
-$(function() {
+require([], function () {
+    console.log(history.state);
     var getParams = function () {
         var requirements = ['key', 'cateId', 'priceType', 'sort', 'order'];
         var arr          = params.split(',');
@@ -17,12 +14,16 @@ $(function() {
 
     var queryParams = null;
 
-    function ItemLoader ($ele, $observer) {
-        var self       = this;
-        self.$ele      = $ele;
-        self.$observer = $observer.appendTo(self.$ele);
-        self.page      = 1;
-        self.timeout   = null;
+    function ItemLoader ($ele, $observer, unitHeight, pageSize) {
+        var self        = this;
+        self.$ele       = $ele;
+        self.$observer  = $observer.appendTo(self.$ele.parent());    // 位置指示器
+        self.page       = 1;
+        self.timeout    = null;
+        self.total      = 1;
+        self.state      = history.state  // 历史状态记录
+        self.unitHeight = unitHeight;
+        self.pageSize   = pageSize;
 
         $(window).scroll(function () {
             self.scroll();
@@ -31,6 +32,15 @@ $(function() {
 
     ItemLoader.prototype.init = function () {
         this.getItems(this.page);
+    }
+
+    ItemLoader.prototype.getCurrentPosition = function () {
+        return Math.ceil(1 + parseFloat(($(window).scrollTop() - this.$ele.offset().top) / (this.unitHeight * this.pageSize), 10));
+    }
+
+    // 移除加载图
+    ItemLoader.prototype.removeObserver = function () {
+        this.$observer.remove();
     }
 
     ItemLoader.prototype.buildItemHtml = function (v, tag) {
@@ -44,8 +54,8 @@ $(function() {
             temp = tag;
         }
 
-        return '<li>'+
-            '<a href="/product-'+ v.id + '.html">' +
+        return '<li>' +
+            '<a href="/product-' + v.id + '.html">' +
                 '<div class="pic">' +  corner + '<img src="' + v.pic +'"></div>'+
                 '<div class="info">' +
                     '<p class="name">' + v.title + '</p>'+
@@ -75,11 +85,21 @@ $(function() {
 
 
     ItemLoader.prototype.getCurrentPage = function () {
+        var self      = this;
         var winHeight = $(window).height();     // 窗口高度
         var offsetTop = this.$observer.offset().top;
 
-        if ($(window).scrollTop() + winHeight <= offsetTop - 105) return false;
+        // cookie('scroll-top', $(window).scrollTop());
+        history.replaceState({ 
+            'scroll-top': $(window).scrollTop(),
+            'last-page': self.getCurrentPosition()
+        }, 'scroll-top and last in viewed page');
 
+        if ($(window).scrollTop() + winHeight <= offsetTop - 105) {
+            return false;
+        }
+        // cookie('last-page', this.page++);
+        
         return this.page++;
     }
 
@@ -92,12 +112,42 @@ $(function() {
         }, 200);
     }
 
+    ItemLoader.prototype.offScroll = function () {
+        var self = this;
+        $(window).off('scroll', self.scroll);
+    }
+
     ItemLoader.prototype.ajaxCallback = function (data) {
         var self = this;
-        $(self.buildHtml(data.data)).insertBefore(self.$observer);
+
+        if (data.params.page === '1') {              // 如果是发送过来的第一页数据,那么记录下分页总数
+            self.total = data.pageNum;
+        }
+
+        if (data.params.page == '' + self.total) {   // 当前是最后一页,取消滚动事件
+            self.offScroll();
+            self.removeObserver();
+        }
+
+        self.$ele.append(self.buildHtml(data.data) + '<i></i>');
+
+        // 读取历史状态
+        if (self.state) {
+            var lastPage = parseInt(history.state['last-page'], 10);
+            if (self.page <= lastPage) {
+                self.getItems(self.page++);
+                // 滚动到历史记录点
+                if (self.page == lastPage) {
+                    self.state = null;  // 清空当前历史状态记录
+                    $(window).scrollTop(parseInt(history.state['scroll-top']), 10); // 如何只触发这个事件一次?
+                }
+            }
+
+        }
     }
 
     ItemLoader.prototype.getItems = function (page) {
+        if (page > this.total) return ;
         var self = this;
 
         if (!queryParams) {
@@ -107,65 +157,6 @@ $(function() {
         ajaxData($.extend(queryParams, { page: page }), self.ajaxCallback.bind(self), '/itemSearch/search');
     }
 
-    var itemLoader = new ItemLoader($('#search_list'), $('<i>'));
+    var itemLoader = new ItemLoader($('#search_list'), $('<div class="loading" id="data_loading"></div>'), 119, 20);
     itemLoader.init();
-
-
-    // (function() {
-    //     // 搜索框清空
-    //     $('.bd_search').find('form i').tap(function() {
-    //         $(this).siblings('input').val('');
-    //     });
-
-    //     // 列表样式
-    //     var $parent = $('nav ul');
-    //     var index= "abc".indexOf($parent.data('index'));
-    //     $parent.find('a').eq(index).addClass('active');
-    // })();
-
-    // getHotProduct();
-
-    // var Total = 100;
-    // var $list = $('#search_list');
-
-    // function getHotProduct () {
-    //     require(['scrollview'], function(scrollview){
-    //         scrollview($list, buildItems);
-    //     });
-
-    //     function buildItems (page) {
-    //         var arr = params.split(',');
-    //         if(page >= Total) {
-    //             $list.data('isend', 1);
-    //             return;
-    //         }
-    //         // 分页数， 关键字，类目id
-    //         ajaxData({ page: page, key: arr[0], cateId: arr[1], 
-    //             priceType: arr[2], sort: arr[3], order: arr[4] }, handleData, '/itemSearch/search');
-    //     }
-    // }
-
-
-    // function handleData (data) {
-    //     // 1: data = [], pageNum = 0
-    //     // 2: data = [], pageNum > 0
-    //     // 3: page: 1
-
-    //     var html = '';
-    //     var list = data.data;
-    //     if(!list.length) {
-    //         if (!data.pageNum) $('.partbd').html('<div class="hint-info">没有找到相关商品</div>');
-    //         return;
-    //     } else if (data.params.page == '1') {
-    //         Total = data.pageNum;
-    //     } else if (data.params.page == '' + Total) {
-    //         $('.loading').hide();
-    //     }
-        
-    // }
-
-
-    // function concatData (v, tag) {
-        
-    // }
 });
