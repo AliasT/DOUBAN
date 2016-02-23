@@ -1,4 +1,4 @@
-mport sublime, sublime_plugin
+import sublime, sublime_plugin
 import re
 class ECommand(sublime_plugin.TextCommand):
     def run(self, edit):
