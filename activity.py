@@ -33,11 +33,14 @@ class Activity():
         '''
         return { 'name': self.name, 'activeUrl': self.current, 'platform': 'WEB' }
 
+
     def create_activity(self): 
         if self.auth():
             res = self.auth_session.post(self.create_edit_url, self.parse_activity_args())
             print(res.text)
             print(res.status_code)
+
+
     # 生成目录
     def build(self, index):
         current = self.__class__.year_month_day + '-' + str(index+1)
